@@ -1,0 +1,482 @@
+1#yangi papka ochib unga muhit o'rnatamiz
+
+2#loyiha yaratamiz src
+
+3#applar yaratamiz 
+
+my_app
+va
+api deb nomlangan applar yaratamiz va loyihani ishga tushirib ko'ramiz
+
+
+4#my_app ni model.py ichiga models yaratamiz 
+
+from django.db import models
+
+class User(models.Model):
+    FirstName = models.CharField(max_length=200)
+    LastName = models.CharField(max_length=200)
+    UserName = models.CharField(max_length=200)
+    Password = models.CharField(max_length=200)
+    CreatedAt = models.DateTimeField(auto_now_add=True)
+    UpdatedAt = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.FirstName
+
+class Client(models.Model):
+	# Prosseccld = models.IntegerField()
+	FirstName = models.CharField(max_length=200)
+	LastName = models.CharField(max_length=200)
+	CarModel = models.CharField(max_length=100)
+	CarNumber = models.CharField(max_length=100)
+	PhoneNumber = models.CharField(max_length=100)
+	CreatedUserld = models.ForeignKey(User,blank=False,null=True,on_delete=models.SET_NULL)
+	# UpdatedUserld = models.ForeignKey(User,blank=False,null=True,on_delete=models.SET_NULL)
+	CreatedAt = models.DateTimeField(auto_now_add=True)
+	UpdatedAt = models.DateTimeField(auto_now=True)
+
+
+5#python manage.py makemigrations
+6#python manage.py migrate
+7#python manage.py createsuperuser
+
+
+8#my_app ichidagi admin.py ga modellarni ulaymiz
+
+from django.contrib import admin
+from .models import User,Client
+
+
+admin.site.register(User)
+admin.site.register(Client)
+
+9#python manage.py runserver
+10#admin paneldan user va client qo'shamiz
+
+
+11#pip install djangorestframework
+12#setting.pyga ulab olamiz
+		'rest_framework',
+
+
+13#loyiha ichidagi
+	urls.py ga yangi appni ulaymiz
+		path('api/v1/',include('api.urls')),
+
+14#api appimiz ichida 
+	serializers.py yaratmiz va quydagilarni yozamiz
+from rest_framework import serializers
+from my_app.models import User,Client
+
+class UserSeralizers(serializers.ModelSerializer):
+	class Meta:
+		model = User
+		# fields = '__all__' #qilib yozishimiz ham mumkin bunda hamma fieldlarni chiqarib beradi
+		fields = ('FirstName','LastName','UserName','CreatedAt') # bu kurinishdagi esa faqat biz xoxlaganlarini chiqarib beradi
+
+
+class ClientSeralizers(serializers.ModelSerializer):
+	class Meta:
+		model = Client
+		# fields = '__all__' #qilib yozishimiz ham mumkin bunda hamma fieldlarni chiqarib beradi
+		fields = ('FirstName','LastName','CarModel','CarNumber','PhoneNumber','CreatedUserld') # bu kurinishdagi esa faqat biz xoxlaganlarini chiqarib beradi
+
+
+
+
+
+15#api app ichidagi
+	views.py ga quydagilarni yozamiz
+from rest_framework.generics import ListAPIView
+from my_app.models import User,Client
+from .serializers import UserSeralizers,ClientSeralizers
+
+class UserView(ListAPIView):
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+class ClientView(ListAPIView):
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+
+
+16#usha appni ichida 
+	urls.py yaratamiz va quygadilarni yozamiz
+from django.urls import path
+from .views import UserView, ClientView
+
+urlpatterns  = [
+	path('users/',UserView.as_view()), 
+	path('clients/',ClientView.as_view()), 
+	]
+
+17#Loyihani ishga tushirib ko'ramiz va berilgan manzillarni tekshiramiz bizga ma'lumotlarni ko'rsatishi kerak
+
+
+18#ma'lumotlarni har bir id uchun kirib uni ko'rishimiz uchun 
+api app ichiga serializers.py views.py va urls.pyga yangi o'zgartirishlar kiritamiz
+views.py
+from rest_framework.generics import ListAPIView ,RetrieveAPIView
+from my_app.models import User,Client
+from .serializers import UserSeralizers,ClientSeralizers
+
+
+# userslar uchun
+class UserView(ListAPIView):
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+class UserDetail(RetrieveAPIView):
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+# clientlar uchun
+class ClientView(ListAPIView):
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+
+
+class ClientDetail(RetrieveAPIView):
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+19#urls.py
+from django.urls import path
+from .views import UserView,UserDetail, ClientView, ClientDetail
+
+urlpatterns  = [
+	path('users/',UserView.as_view()), 
+	path('users/<int:pk>/',UserDetail.as_view()),
+
+	path('clients/',ClientView.as_view()), 
+	path('clients/<int:pk>/',ClientDetail.as_view()),
+	]
+
+20#serializers.py
+
+from rest_framework import serializers
+from my_app.models import User,Client
+
+class UserSeralizers(serializers.ModelSerializer):
+	class Meta:
+		model = User
+		# fields = '__all__' #qilib yozishimiz ham mumkin bunda hamma fieldlarni chiqarib beradi
+		fields = ('id','FirstName','LastName','UserName','CreatedAt') # bu kurinishdagi esa faqat biz xoxlaganlarini chiqarib beradi
+
+
+class ClientSeralizers(serializers.ModelSerializer):
+	class Meta:
+		model = Client
+		# fields = '__all__' #qilib yozishimiz ham mumkin bunda hamma fieldlarni chiqarib beradi
+		fields = ('id','FirstName','LastName','CarModel','CarNumber','PhoneNumber','CreatedUserld') # bu kurinishdagi esa faqat biz xoxlaganlarini chiqarib beradi
+
+
+21#Yuqorida kurganlarimiz faqatgina GET metodi uchun edi 
+DJANGO REST_API da 4ta surovlar mavjud   GET PUT(update) POST DELETE metodlar mavjud
+
+
+22#api views.py ichiga qolgan metodlarni ko'rish uchun yangi o'zgartirishlar kiritamiz
+from rest_framework.generics import ListCreateAPIView  ,RetrieveUpdateDestroyAPIView
+from my_app.models import User,Client
+from .serializers import UserSeralizers,ClientSeralizers
+
+
+# userslar uchun
+class UserView(ListCreateAPIView ):
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+class UserDetail(RetrieveUpdateDestroyAPIView):
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+# clientlar uchun
+class ClientView(ListCreateAPIView ):
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+
+
+class ClientDetail(RetrieveUpdateDestroyAPIView):
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+23#Loyihani ishlatamiz va surovlarni o'zgartirib ko'ramiz
+
+
+24# hozirda hamma ko'rishi mumkin bizni bazadagi ma'lumotlarimizni buni cheklab qo'yishimiz kerak buning uchun 
+settings.py ga REST_FRAMEWORK o'zgaruvchi yaratib yozib olamiz
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES":[
+        'rest_framework.permissions.AllowAny' ]    #AllowAny degani bu barcha ko'rishi mumkin ro'yxatdan o'tmagan bo'lsa ham
+        }
+
+25# va api appimiz ichidagiz views.py qa yangi o'zgartirish kiritamiz 
+
+from rest_framework.generics import ListCreateAPIView  ,RetrieveUpdateDestroyAPIView
+from my_app.models import User,Client
+from .serializers import UserSeralizers,ClientSeralizers
+from rest_framework import permissions
+
+
+# userslar uchun
+class UserView(ListCreateAPIView ):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+class UserDetail(RetrieveUpdateDestroyAPIView):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+# clientlar uchun
+class ClientView(ListCreateAPIView ):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+
+
+class ClientDetail(RetrieveUpdateDestroyAPIView):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+26# Loyihani ishga tushiramiz admin paneldan chiqib ketishimiz kerak logout qilib so'ngra manzillarga kiramiz va biz ma'lumotlarni ko'ramiz deganimizda bizga HTTP 403 Forbidden qaytaradi va ro'yxatdan o'tmagan va login qilmagan odam ko'ra olmaydi sababi cheklab quydik
+
+ma'lumotlarni ko'rishimiz uchun createsuperuser yaratgan edik 
+
+Loyihamizni ishlatib ko'ramiz va boshqa papkaga kopiya olib quyamiz shu loyihamizdan 
+
+
+
+
+
+Loyihamizni ishlatib ko'ramiz va boshqa papkaga kopiya olib quyamiz shu loyihamizdan 
+
+######################################## DAVOM etamiz.... ################################
+
+1#   my_app appimiz ichidagi model.py faylimizni o'zgartirib olamiz (AbstractUser)ga
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+class User(AbstractUser):
+    firstname = models.CharField(max_length=200)
+    lastname = models.CharField(max_length=200)
+    username = models.CharField(max_length=200,unique=True)
+    password = models.CharField(max_length=200)
+    createdat = models.DateTimeField(auto_now_add=True)
+    updatedat = models.DateTimeField(auto_now=True)
+
+class Client(models.Model):
+	# Prosseccld = models.IntegerField()
+	FirstName = models.CharField(max_length=200)
+	LastName = models.CharField(max_length=200)
+	CarModel = models.CharField(max_length=100)
+	CarNumber = models.CharField(max_length=100)
+	PhoneNumber = models.CharField(max_length=100)
+	CreatedUserld = models.ForeignKey(User,blank=False,null=True,on_delete=models.SET_NULL)
+	# UpdatedUserld = models.ForeignKey(User,blank=False,null=True,on_delete=models.SET_NULL)
+	CreatedAt = models.DateTimeField(auto_now_add=True)
+	UpdatedAt = models.DateTimeField(auto_now=True)
+
+
+
+SETTINS.py faylini oxirgi qatoriga 
+AUTH_USER_MODEL = 'my_app.User' yozib olamiz
+
+
+
+2#  python manage.py makemigrations
+VA yangillanishlarni o'zgartirib olamiz
+
+3#  python manage.py migrate
+
+
+4#   serializers.py faylimiz orasiga userni ruyxatdan o'tishi uchun  serializers yozib olamiz bu bizga TOKEN qaytarishi kerak bo'ladi
+class UserREGSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+        "id",
+        'firstname',
+        'lastname',
+        'username',
+        'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+
+    def create(self, validated_data):
+        auth_user = User.objects.create_user(**validated_data)
+        return auth_user
+
+
+5#  api appimiz ichidagi views.py ga quydagi kodlarni kopirovat qilamiz
+
+from rest_framework.generics import ListCreateAPIView  ,RetrieveUpdateDestroyAPIView
+from my_app.models import User,Client
+from .serializers import UserSeralizers,ClientSeralizers, UserREGSerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework.authtoken.models import Token
+from rest_framework import permissions
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework.response import Response
+
+
+class AuthUserRegistrationView(APIView):
+    permission_classes = (AllowAny, )
+    def post(self, request, *args, **kwargs):
+
+        serializer = UserREGSerializer(data=request.data)
+
+        for user in User.objects.all():
+            if not user:
+                break
+            else:
+                try:
+                    Token.objects.get(user_id=user.id)
+                except Token.DoesNotExist:
+                    Token.objects.create(user=user)
+
+        if serializer.is_valid():
+            user = serializer.save()
+            token = Token.objects.create(user=user)
+
+            return Response(
+                {
+                    "user": {
+                        "id": serializer.data["id"],
+                        "firstname": serializer.data["firstname"],
+                        "lastname": serializer.data["lastname"],
+                        "username": serializer.data["username"],
+                    },
+                    "status": {
+                        "message": "User created",
+                        "code": f"{status.HTTP_200_OK} OK",
+                    },
+                    "token": token.key,
+                }
+            )
+        return Response(
+             {
+                "error": serializer.errors,
+                "status": f"{status.HTTP_203_NON_AUTHORITATIVE_INFORMATION}\
+                    NON AUTHORITATIVE INFORMATION",
+                }
+        )
+
+# userslar uchun
+class UserView(ListCreateAPIView ):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+class UserDetail(RetrieveUpdateDestroyAPIView):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = User.objects.all()
+	serializer_class  = UserSeralizers
+
+
+# clientlar uchun
+class ClientView(ListCreateAPIView ):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+
+
+class ClientDetail(RetrieveUpdateDestroyAPIView):
+	permission_classes = (permissions.IsAuthenticated,)
+	queryset = Client.objects.all()
+	serializer_class  = ClientSeralizers
+
+
+
+6# settings.py da applar ichida 
+'rest_framework.authtoken', kiritib olamiz
+pastidan quydagilarni yozamiz bu token beradi va autinfikatsiya qilish uchun kerak
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.AllowAny',
+
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    )}
+
+
+7#api apimiz urls.py ga o'zgartirishni yozamiz
+from django.urls import path
+from .views import UserView,UserDetail, ClientView, ClientDetail,AuthUserRegistrationView
+
+urlpatterns  = [
+	path('users/',UserView.as_view()), 
+	path('users/<int:pk>/',UserDetail.as_view()),
+
+	path('clients/',ClientView.as_view()), 
+	path('clients/<int:pk>/',ClientDetail.as_view()),
+	path('register/',AuthUserRegistrationView.as_view()),
+	]
+
+
+Loyihani ishga tushiramiz va yangi user bilan ruyxatdan o'tamiz
+bizga token qaytarishi kerak
+
+8# Endi esa login qismini yozib chiqamiz
+
+api app views.py 
+
+class UserLoginView(APIView):
+    permission_classes = (AllowAny, )
+    def post(self, request):
+        user = authenticate(username=request.data.get('username'), password=request.data.get('password'))
+        if user is None:
+            return Response({"error": "xatolik"}, status=status.HTTP_404_NOT_FOUND)
+            
+        token, is_create = Token.objects.get_or_create(user=user)
+
+        return Response({
+            "ok": status.HTTP_200_OK,
+            'message': 'success',
+
+            "username": token.user.username,
+            }
+        )
+
+
+9# api urls.py 
+from django.urls import path
+from .views import UserView,UserDetail, ClientView, ClientDetail,AuthUserRegistrationView,UserLoginView
+
+urlpatterns  = [
+	path('users/',UserView.as_view()), 
+	path('users/<int:pk>/',UserDetail.as_view()),
+
+	path('clients/',ClientView.as_view()), 
+	path('clients/<int:pk>/',ClientDetail.as_view()),
+	path('register/',AuthUserRegistrationView.as_view()),
+	path('login/',UserLoginView.as_view()),
+	]
+
+Loyihani POSTMANDA ochib undan ma'lumotlarga surovlar yuborib ko'ramiz
+
+
+
+
